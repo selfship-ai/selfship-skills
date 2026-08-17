@@ -2,7 +2,7 @@
 
 Customer-installable skills for [Selfship](https://selfship.ai): instrument a repo, discover agentic workflows, and reason about the product-facet taxonomy — from your own coding agent.
 
-These skills edit (or read) **your** tree. They do not open a GitHub PR and they do not enqueue hosted first-PR. Pair them with the hosted MCP at `https://mcp.selfship.ai` (mint an `ssa_` secret in Selfship **Settings → your org → Agent**).
+These skills edit (or read) **your** tree. They do not open a GitHub PR and they do not enqueue hosted first-PR. Pair them with the hosted MCP at `https://app.selfship.ai/api/mcp` (mint an `ssa_` secret in Selfship **Settings → your org → Agent**).
 
 [![skills.sh](https://skills.sh/b/selfship-ai/selfship-skills)](https://skills.sh/selfship-ai/selfship-skills)
 
@@ -46,7 +46,7 @@ Cursor / Claude Code (`mcp.json` or Claude config):
 {
   "mcpServers": {
     "selfship": {
-      "url": "https://mcp.selfship.ai",
+      "url": "https://app.selfship.ai/api/mcp",
       "headers": {
         "X-SelfShip-Org-ID": "${SELFSHIP_ORG_ID}",
         "X-SelfShip-Org-Secret": "${SELFSHIP_ORG_SECRET}"
@@ -71,7 +71,7 @@ Visual Studio Code (Command Palette → **MCP: Open User Configuration**, or `.v
   "servers": {
     "selfship": {
       "type": "http",
-      "url": "https://mcp.selfship.ai",
+      "url": "https://app.selfship.ai/api/mcp",
       "headers": {
         "X-SelfShip-Org-ID": "<org_id>",
         "X-SelfShip-Org-Secret": "${input:selfship-org-secret}"

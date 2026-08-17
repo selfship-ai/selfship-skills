@@ -1,7 +1,7 @@
 {
   "name": "selfship",
   "displayName": "Selfship",
-  "description": "Selfship skills: instrument, explore-workflows, product-facets. Pair with the hosted MCP at https://mcp.selfship.ai.",
+  "description": "Selfship skills: instrument, explore-workflows, product-facets. Pair with the hosted MCP at https://app.selfship.ai/api/mcp.",
   "version": "0.1.0",
   "publisher": "selfship-ai",
   "engines": {

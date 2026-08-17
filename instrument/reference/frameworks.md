@@ -148,4 +148,4 @@ Pin OpenInference to the **same major** as the `openai` package. A v4 instrument
 
 ### Transport
 
-HTTP/protobuf only. `grpc`, `http/json`, and custom collector URLs are unsupported. Endpoint host is `otel.selfship.ai` — not `mcp.selfship.ai` and not a Langfuse cloud host.
+HTTP/protobuf only. `grpc`, `http/json`, and custom collector URLs are unsupported. Endpoint host is `otel.selfship.ai` — not `app.selfship.ai/api/mcp` (that's MCP) and not a Langfuse cloud host.

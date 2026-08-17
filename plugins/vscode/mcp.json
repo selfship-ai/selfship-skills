@@ -2,7 +2,7 @@
   "servers": {
     "selfship": {
       "type": "http",
-      "url": "https://mcp.selfship.ai",
+      "url": "https://app.selfship.ai/api/mcp",
       "headers": {
         "X-SelfShip-Org-ID": "${env:SELFSHIP_ORG_ID}",
         "X-SelfShip-Org-Secret": "${env:SELFSHIP_ORG_SECRET}"
