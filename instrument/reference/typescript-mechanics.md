@@ -59,9 +59,9 @@ Pick the best mechanism per workflow's `framework`:
 
 | Framework family | Preferred mechanism |
 |---|---|
-| LangChain (TypeScript) | Nest `chain.invoke` inside `workflow()` / `resumeTrace()` so the OTel parent is ambient. Inside a running LangGraph node, reuse `config.callbacks` (the live `CallbackManager`) — a fresh `CallbackHandler()` leaves `parent_run_id` unset and Langfuse elevates that run's I/O onto the trace. Do not construct `CallbackHandler` with a hand-rolled `{ traceId, parentSpanId }` from `handle.traceContext()`; SelfShip spells the parent `observationId`, Langfuse expects `parentSpanId`. |
-| OpenAI (TypeScript) | Nest `observeOpenAI` inside `workflow()` so it inherits the active observation. There is no `client.trace()` / `{ parent: trace }` factory. |
-| Vercel AI SDK | OTel env vars → `otel.selfship.ai` |
+| LangChain (TypeScript) | If LangSmith OTel already forms a usable turn: `initializeOTEL` + invoke metadata (`reference/frameworks.md`). There is no `langchainCallbacks` helper — this is the supported JS LangChain path. Greenfield without LangSmith: nest `chain.invoke` inside `workflow()` / `resumeTrace()` so the OTel parent is ambient. Inside a running LangGraph node, reuse `config.callbacks` (the live `CallbackManager`) — a fresh `CallbackHandler()` leaves `parent_run_id` unset and Langfuse elevates that run's I/O onto the trace. Do not construct `CallbackHandler` with a hand-rolled `{ traceId, parentSpanId }` from `handle.traceContext()`; SelfShip spells the parent `observationId`, Langfuse expects `parentSpanId`. |
+| OpenAI (TypeScript) | Nest `observeOpenAI` inside `workflow()` so it inherits the active observation. There is no `client.trace()` / `{ parent: trace }` factory. Pin OpenInference to the same `openai` major when that instrumentor is already present (`reference/frameworks.md`). |
+| Vercel AI SDK | `experimental_telemetry: { isEnabled: true }` on `generateText` / `streamText` / `generateObject`. Do not invent OTLP for `OpenAIStream`. Then OTel env vars → `otel.selfship.ai`. |
 
 **OTel fallback (no SDK):**
 ```bash

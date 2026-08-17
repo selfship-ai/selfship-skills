@@ -21,7 +21,11 @@ Load **`reference/body.md`** (modes, hard rules 1–19, checklist) and the mecha
 
 Load **`reference/langfuse_best_practices.md`** for sessions, identity, tags, metadata, observation types, cost, feedback, releases.
 
+Load **`reference/frameworks.md`** when the repo already emits AI spans, uses LangSmith, LiveKit, Vercel AI, or OpenInference — OTel-first routing, LangSmith OTel recipe, and framework gotchas.
+
 Framework tables: `reference/selfship_integrations.md` and `reference/langfuse_integration_model.md`.
+
+Inspect existing telemetry **before** `init()` / `workflow()` / `langchain_callbacks()`. If a real turn already emits `gen_ai` / `ai` / `llm` / `lk` / LangSmith spans, point OTLP at `otel.selfship.ai` and stop — do not attach a second mechanism. After edits, validate one real turn with `traces.get` / `sessions.get` (inventory tags are not enough).
 
 ## Credentials (two different secrets)
 
@@ -38,7 +42,7 @@ Pick one. State it before editing.
 
 | Mode | Job |
 | --- | --- |
-| `initial` | Global `init()` + instrument selected workflows |
+| `initial` | Inspect existing telemetry first. Preserve a usable OTel/LangSmith path; otherwise global `init()` + instrument selected workflows |
 | `sync` | Add newly selected, remove deselected, verify already-instrumented |
 | `verify` / `fix` | Audit `to_verify` + apply minimal fixes |
 | `sdk_upgrade` | Bump the declared SDK dep to the contract floor and apply `migration-brief.json` call-site actions |
@@ -54,6 +58,8 @@ When MCP is configured:
 - `workflows.set_selected` — toggle yes/no (does **not** open a PR)
 - `product_profile.get` — path-coverage context
 - `action_items.list` — filter `source=sdk_dep_upgrade` or lever/title for upgrade work
+- `traces.list` / `traces.get` — confirm a real turn landed (full I/O on get). Pass `environment` matching the app; MCP defaults to production, SDK defaults to development
+- `sessions.list` / `sessions.get` — confirm stable `conversation_id` / `user_id`. `sessions.get` needs `user_key` plus `session_id` or `trace_ids`
 
 Do **not** call `workflows.upsert`. Inventory publish is a different skill/act.
 

@@ -40,7 +40,7 @@ Pick the best mechanism per workflow's `framework`:
 
 | Framework family | Preferred mechanism |
 |---|---|
-| LangChain / LangGraph | `selfship.langchain_callbacks()` after `selfship.init()`, invoked **inside** `workflow()`. Nested invokes (judge, repair, retry) reuse the parent `CallbackManager` (`config["callbacks"]`) — never a fresh handler list. Cross-boundary chains with no LangChain parent: `langchain_callbacks(trace_context=wf.trace_context())`. |
+| LangChain / LangGraph | If LangSmith OTel (or other `gen_ai`/`llm` spans) already form a usable turn: preserve and route to SelfShip (`reference/frameworks.md`). Do not also attach `langchain_callbacks()`. Greenfield: `selfship.langchain_callbacks()` after `selfship.init()`, invoked **inside** `workflow()`. Nested invokes (judge, repair, retry) reuse the parent `CallbackManager` (`config["callbacks"]`) — never a fresh handler list. Cross-boundary chains with no LangChain parent: `langchain_callbacks(trace_context=wf.trace_context())`. |
 | OpenAI | `langfuse.openai` wrapper |
 | Unknown / raw HTTP | `workflow()` / `@observe()` after `init`. Do not call `update_current_trace()` (removed in Langfuse v4) or invent `client.trace()`. |
 

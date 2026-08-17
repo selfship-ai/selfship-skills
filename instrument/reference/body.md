@@ -4,6 +4,8 @@ Single skill for **all** instrumentation work: initial, sync (add/remove), and v
 
 Load **`reference/langfuse_best_practices.md`** for contextual tracing config (sessions, identity, tags, metadata, observation types, token/cost, feedback, releases).
 
+Load **`reference/frameworks.md`** when the repo already emits AI spans, uses LangSmith, LiveKit, Vercel AI, or OpenInference — OTel-first routing, LangSmith OTel recipe, and framework gotchas.
+
 Credentials: `SELFSHIP_ORG_ID` + `SELFSHIP_REPO_SECRET` (per-repo secret). Optional `SELFSHIP_REPO=owner/repo` for `metadata.repo` enrichment.
 
 ---
@@ -12,7 +14,7 @@ Credentials: `SELFSHIP_ORG_ID` + `SELFSHIP_REPO_SECRET` (per-repo secret). Optio
 
 | Mode | Job |
 |---|---|
-| **initial** | Bootstrap top workflows; add global config + instrument selected workflows |
+| **initial** | Inspect existing telemetry first. Preserve a usable OTel/LangSmith path; otherwise global `init()` + instrument selected workflows |
 | **sync** | Add selected-but-missing; **remove** deselected-but-instrumented (active/started only); **verify** already-instrumented selected workflows |
 | **fix / verify** | Audit `to_verify` workflows for gaps; apply minimal fixes |
 
@@ -20,7 +22,7 @@ Credentials: `SELFSHIP_ORG_ID` + `SELFSHIP_REPO_SECRET` (per-repo secret). Optio
 
 ## Global tracing config (app-wide, once)
 
-- Call `init()` at the real process entry point per the SDK contract
+- Call `init()` at the real process entry point per the SDK contract **unless** this process only redirects an existing OTel/LangSmith exporter (then skip SDK `init()`)
 - `.env.example`: `SELFSHIP_ORG_ID`, `SELFSHIP_REPO_SECRET`, optional `SELFSHIP_REPO`
 - `SELFSHIP_ENV=production` (commented; SDK defaults to `development`)
 - `LANGFUSE_RELEASE=` (commented; git SHA in CI)
@@ -34,6 +36,33 @@ Before editing, inspect neighboring tests, dependency manifests, package scripts
 formatter and linter config, and repository guidance. Preserve logging and serialization behavior.
 Add tests in the established location and style for every non-trivial tracing helper. Report commands
 actually run and unavailable commands separately; never install packages to run quality checks.
+
+---
+
+## Inspect existing telemetry first (mandatory)
+
+Before adding SelfShip SDK `init()` / `workflow()` / `langchain_callbacks()`, inspect the real AI entrypoint:
+
+- OpenTelemetry provider/exporter, `OTEL_EXPORTER_OTLP_*`, `@vercel/otel`, OpenInference instrumentors
+- `LANGSMITH_OTEL_ENABLED`, `LANGSMITH_OTEL_ONLY`, `LANGSMITH_TRACING`, `langsmith[otel]`, `initializeOTEL`
+- Vercel AI `experimental_telemetry`, LiveKit `set_tracer_provider` / `telemetry.setTracerProvider`
+- Representative spans from one real interaction (`gen_ai.*`, `ai.*`, `llm.*`, `lk.*`, LangSmith, MCP)
+
+**Preserve the existing path** when those spans already form a usable conversation (user, session, turn I/O, tool children). Route the exporter to SelfShip — do not install a second mechanism (hard rule 10). See `reference/frameworks.md`.
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=https://otel.selfship.ai
+OTEL_EXPORTER_OTLP_HEADERS="X-SelfShip-Org-ID=<org_id>,X-SelfShip-Repo-Secret=<repo_secret>"
+OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+```
+
+The gateway accepts HTTP/protobuf only. There is no gRPC listener.
+
+If OTel exists but the real AI path emits no supported spans, add the framework's official instrumentation or the smallest missing attributes (`reference/frameworks.md`). Only then fall back to SelfShip SDK `init()` + `workflow()`.
+
+If you only redirect an existing exporter, do **not** also call `init()`. `provider_mode` isolated/shared (below) applies only when you add the SelfShip SDK.
+
+Treat automatic OTel detection as a candidate, not proof. Validate one real turn (below) before declaring the route usable.
 
 ---
 
@@ -104,14 +133,36 @@ For each workflow in `to_verify` (selected + `started`/`active`):
 
 1. Locate existing instrumentation via `workflow:<key>` tags / `metadata.workflow_key`
 2. Audit against this skill's checklist (global config, tags, mechanism, path coverage, contextual config)
-3. If gaps found (missing tags/metadata, wrong mechanism, dark segments, missing `init()`):
+3. If gaps found (missing tags/metadata, wrong mechanism, dark segments, or missing `init()` **on an SDK route**):
    - Apply the **minimal** fix
    - Re-stamp `workflow:<key>` tags
+   - Do not treat missing `init()` as a gap when the chosen route is preserved OTel/LangSmith
 4. If already correct: leave unchanged
 
 When only `to_verify` work remains and no code changes are needed, return `"confidence": "none"`.
 
 Trace-eval findings (`tool_not_scoped`, missing tags/metadata, dark segments) may also drive fixes when present in the prompt context.
+
+### Real-turn validation (after edits)
+
+Inventory-tag presence is not enough. When you can run the app and MCP is configured (customer/local skill):
+
+1. Restart the process so new env / provider wiring loads.
+2. Drive **one real** chat or tool call (not a mocked unit test).
+3. Confirm the turn with `traces.list` then `traces.get`. Pass `environment` matching the app (`SELFSHIP_ENV` / `LANGFUSE_TRACING_ENVIRONMENT`). MCP defaults to **production**; the SDK defaults to **development** when `SELFSHIP_ENV` is unset. An empty production list is not proof the route failed — query the env you actually emit to before changing code.
+4. `sessions.get` requires `user_key` (and `session_id` or `trace_ids`). Do not call it bare.
+
+Check:
+
+- `user_id` is stable across two conversations from the same user
+- `conversation_id` / session is stable within one conversation and different across two
+- tools appear as children of the turn, not sibling roots
+- the generation carries token/usage when the provider reports it
+- nested LangChain/LangGraph runs do **not** stamp `is_langchain_root` or overwrite trace I/O (hard rule 19)
+
+If you cannot run a real turn (hosted first-PR sandbox, no MCP, no credentials): do **not** invent a live call and do **not** add a second mechanism. Leave real-turn as a followup; code audit + tags remain the verify path.
+
+If the preserved OTel path fails this checklist, add the missing attributes on that path first. Do not stack `CallbackHandler` on top.
 
 ---
 
@@ -149,6 +200,9 @@ Trace-eval findings (`tool_not_scoped`, missing tags/metadata, dark segments) ma
 - [ ] `to_verify` workflows audited; gaps fixed or confirmed OK
 - [ ] Sync-set equality (no extras); shared helpers gated; thread boundaries respected
 - [ ] Existing telemetry respected: isolated/filtered provider when `recommended_mode != "clean"` (no bare global attach)
+- [ ] Existing AI spans inspected before `init()`; usable OTel/LangSmith path preserved (no second mechanism)
+- [ ] One real turn validated when runnable (`traces.get` with matching `environment`, or followup if hosted/no MCP): stable user/session, tool children, tokens, no `is_langchain_root` I/O overwrite
+- [ ] Framework gotchas applied when relevant (LiveKit URL, Vercel `experimental_telemetry`, OpenInference pin, flush vs shutdown, HTTP/protobuf only) — `reference/frameworks.md`
 - [ ] Streaming paths end the generation after stream drain; serverless uses `flush` (not `shutdown`)
 - [ ] One integration per call site (no double instrumentation); spans close on error via `try/finally`
 - [ ] No custom tracing wrapper module; `init()`/`workflow()` called directly (init is thread-safe)
