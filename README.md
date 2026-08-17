@@ -2,31 +2,45 @@
 
 Customer-installable skills for [Selfship](https://selfship.ai): instrument a repo, discover agentic workflows, and reason about the product-facet taxonomy — from your own coding agent.
 
-These skills edit (or read) **your** tree. They do not open a GitHub PR and they do not enqueue hosted first-PR. Pair them with the hosted MCP at `https://mcp.selfship.ai` (mint an `ssa_` secret in Selfship **Settings → Agent**).
+These skills edit (or read) **your** tree. They do not open a GitHub PR and they do not enqueue hosted first-PR. Pair them with the hosted MCP at `https://mcp.selfship.ai` (mint an `ssa_` secret in Selfship **Settings → your org → Agent**).
 
-Canonical folders (copy-paste these):
+[![skills.sh](https://skills.sh/b/selfship-ai/selfship-skills)](https://skills.sh/selfship-ai/selfship-skills)
 
-| Folder | Skill | Side effects |
-| --- | --- | --- |
-| `instrument/` | `selfship-instrument` | Edits the local tree, then **stops** |
-| `explore-workflows/` | `selfship-explore-workflows` | Read-only inventory. Must not call `workflows.upsert` |
-| `product-facets/` | `selfship-product-facets` | Read + propose. No MCP write |
+## Install
 
-| Agent | Install |
+```bash
+npx skills add selfship-ai/selfship-skills
+```
+
+That is the whole install. The [skills CLI](https://github.com/vercel-labs/skills) copies the three skills into the agents on this machine (Cursor, Claude Code, GitHub Copilot / VS Code, and others).
+
+| Flag | When |
 | --- | --- |
-| [Cursor](#cursor) | Plugin from this GitHub URL, or copy the three canonical folders |
-| [Visual Studio Code](#vscode) | Copilot agent mode — copy `plugins/vscode/skills/selfship-*` (names must stay `selfship-*`) |
-| [Claude Code](#claude-code) | `/plugin marketplace add selfship-ai/selfship-skills` |
+| (none) | Project install — run it in the repo you want to instrument |
+| `-g` | Every workspace on this machine |
+| `-y` | Skip prompts (CI / already know the agents) |
 
-<a id="cursor"></a>
+```bash
+npx skills add selfship-ai/selfship-skills -g
+```
 
-## Cursor
+Then add MCP ([docs](https://docs.selfship.ai/mcp-server)). Skills without MCP still work if you pass a local inventory or name the workflows yourself.
 
-**Plugin (GitHub URL):** import `https://github.com/selfship-ai/selfship-skills` as a Cursor plugin / Team marketplace source. The plugin lives in `plugins/selfship/`.
+## The three skills
 
-**Raw copy:** copy `instrument/`, `explore-workflows/`, and `product-facets/` into `.cursor/skills/` (project) or `~/.cursor/skills/` (user).
+| Skill | Side effects |
+| --- | --- |
+| `selfship-instrument` | Edits the local tree, then **stops** |
+| `selfship-explore-workflows` | Read-only inventory. Must not call `workflows.upsert` |
+| `selfship-product-facets` | Read + propose. No MCP write |
 
-MCP snippet (Settings → Agent also shows this):
+Canonical folders in this repo: `instrument/`, `explore-workflows/`, `product-facets/`.
+
+## MCP
+
+Hosted streamable HTTP. Auth is `X-SelfShip-Org-ID` + `X-SelfShip-Org-Secret` (`ssa_…`), or HTTP Basic `org_id:org_secret`. A repo ingest `bps_` / `SELFSHIP_REPO_SECRET` is rejected.
+
+Cursor / Claude Code (`mcp.json` or Claude config):
 
 ```json
 {
@@ -42,25 +56,7 @@ MCP snippet (Settings → Agent also shows this):
 }
 ```
 
-<a id="vscode"></a>
-
-## Visual Studio Code
-
-Requires [GitHub Copilot](https://code.visualstudio.com/docs/copilot/overview) **agent mode**. Plain VS Code without Copilot will not load skills.
-
-Copilot requires the skill **folder name** to match `name:` in `SKILL.md`. Use the wrappers in `plugins/vscode/skills/` (`selfship-instrument`, `selfship-explore-workflows`, `selfship-product-facets`) — do not copy the canonical `instrument/` folder names as-is.
-
-**Skills (pick one):**
-
-| Install | What to do |
-| --- | --- |
-| Repo (share with the team) | Copy `plugins/vscode/skills/selfship-*` into `.github/skills/` |
-| User (every workspace) | Copy those same three folders into `~/.copilot/skills/` |
-| Clone in place | Clone this repo and add `plugins/vscode/skills` to `chat.agentSkillsLocations` |
-
-`plugins/vscode/package.json` is a contribution-only extension (`chatSkills`). Package with `vsce` when publishing to the Marketplace; until then use the copy path above.
-
-**MCP:** Command Palette → `MCP: Open User Configuration`, or add `.vscode/mcp.json`. VS Code uses a top-level `servers` key (not `mcpServers`):
+Visual Studio Code (Command Palette → **MCP: Open User Configuration**, or `.vscode/mcp.json`). Top-level key is `servers`, not `mcpServers`:
 
 ```json
 {
@@ -85,26 +81,17 @@ Copilot requires the skill **folder name** to match `name:` in `SKILL.md`. Use t
 }
 ```
 
-Or copy `plugins/vscode/mcp.json` and set `SELFSHIP_ORG_ID` / `SELFSHIP_ORG_SECRET` in the environment. Mint the `ssa_` secret in Selfship **Settings → Agent**.
+`plugins/selfship/mcp.json` and `plugins/vscode/mcp.json` are the same snippets without secrets.
 
-Switch Copilot Chat to **Agent**, then ask to instrument the repo, explore workflows, or propose product facets.
+## Other install paths
 
-<a id="claude-code"></a>
+Use these only if you cannot run `npx`.
 
-## Claude Code
-
-```text
-/plugin marketplace add selfship-ai/selfship-skills
-/plugin install selfship@selfship-skills
-```
-
-Or copy the three folders into `~/.claude/skills/` / `.claude/skills/`.
-
-## MCP
-
-Hosted streamable HTTP. Auth is `X-SelfShip-Org-ID` + `X-SelfShip-Org-Secret` (`ssa_…`), or HTTP Basic `org_id:org_secret`. A repo ingest `bps_` / `SELFSHIP_REPO_SECRET` is rejected.
-
-`plugins/selfship/mcp.json` is the Cursor / Claude snippet. `plugins/vscode/mcp.json` is the VS Code snippet. Both point at the URL only — no secrets.
+| Agent | Alternative |
+| --- | --- |
+| Claude Code | `/plugin marketplace add selfship-ai/selfship-skills` then `/plugin install selfship@selfship-skills` |
+| Cursor | Import `https://github.com/selfship-ai/selfship-skills` as a plugin / Team marketplace source (`plugins/selfship/`) |
+| VS Code (Copilot agent mode) | `npx skills add selfship-ai/selfship-skills -a github-copilot` — folder names must stay `selfship-*` |
 
 ## Versioning
 
