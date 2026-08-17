@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "selfship": {
+      "type": "http",
+      "url": "https://mcp.selfship.ai",
+      "headers": {
+        "X-SelfShip-Org-ID": "${env:SELFSHIP_ORG_ID}",
+        "X-SelfShip-Org-Secret": "${env:SELFSHIP_ORG_SECRET}"
+      }
+    }
+  }
+}

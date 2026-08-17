@@ -1,0 +1,18 @@
+{
+  "name": "selfship",
+  "displayName": "Selfship",
+  "description": "Selfship skills: instrument, explore-workflows, product-facets. Pair with the hosted MCP at https://mcp.selfship.ai.",
+  "version": "0.1.0",
+  "publisher": "selfship-ai",
+  "engines": {
+    "vscode": "^1.99.0"
+  },
+  "categories": ["AI", "Chat"],
+  "contributes": {
+    "chatSkills": [
+      { "path": "./skills/selfship-instrument/SKILL.md" },
+      { "path": "./skills/selfship-explore-workflows/SKILL.md" },
+      { "path": "./skills/selfship-product-facets/SKILL.md" }
+    ]
+  }
+}
