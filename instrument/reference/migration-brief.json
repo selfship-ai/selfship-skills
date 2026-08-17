@@ -1,0 +1,78 @@
+{
+  "from_version": "0.3.8",
+  "to_version": "0.3.9",
+  "dependency_range": {
+    "python": ">=0.3.9,<0.4.0",
+    "typescript": ">=0.3.9 <0.4.0"
+  },
+  "call_site_actions": [
+    {
+      "id": "python_stop_update_current_trace",
+      "languages": [
+        "python"
+      ],
+      "summary": "Do not call update_current_trace; Langfuse Python v4 removed it and SelfShip already mirrors I/O",
+      "detect": "update_current_trace(",
+      "fix": "Delete the call. workflow()/begin()/track() already write input/output on the trace via span.set_trace_io. For identity/tags/metadata use workflow(...) / propagate_attributes(...) / LANGFUSE_RELEASE."
+    },
+    {
+      "id": "python_replace_private_span_with_trace_context",
+      "languages": [
+        "python"
+      ],
+      "summary": "Replace WorkflowHandle._span / private span reads with handle.trace_context() / current_trace_context()",
+      "detect": "handle._span or wf._span or reading underscore-prefixed SDK attributes for trace/span ids",
+      "fix": "Use handle.trace_id / handle.observation_id / handle.trace_context() or current_trace_id() / current_observation_id() / current_trace_context(). Never read _span."
+    },
+    {
+      "id": "typescript_replace_private_span_with_trace_context",
+      "languages": [
+        "typescript"
+      ],
+      "summary": "Replace private handle span reads with handle.traceContext() / currentTraceContext()",
+      "detect": "Reading private handle fields for trace/span ids",
+      "fix": "Use handle.traceId / handle.observationId / handle.traceContext() or currentTraceId() / currentObservationId() / currentTraceContext() / resumeTrace()."
+    },
+    {
+      "id": "python_remove_handrolled_trace_io_mirror",
+      "languages": [
+        "python"
+      ],
+      "summary": "Remove hand-rolled trace-level input/output mirroring; workflow()/begin()/track() already write I/O on the trace",
+      "detect": "Custom helpers that copy span/observation I/O onto the Langfuse trace object (e.g. mirror_selfship_trace_io, update_current_trace used only to copy I/O)",
+      "fix": "Delete the mirror helper. Keep workflow(input=...) / handle.set_output(...) / begin()/track(). Leaving the helper in place double-writes the same fields."
+    },
+    {
+      "id": "python_langchain_reuse_callback_manager",
+      "languages": [
+        "python"
+      ],
+      "summary": "Do not replace config['callbacks'] inside a running LangChain/LangGraph node",
+      "detect": "Fresh langchain_callbacks() / CallbackHandler() list assigned onto RunnableConfig inside a graph node, judge, repair, or retry",
+      "fix": "Reuse parent_config['callbacks'] (the live CallbackManager). Thread the same config= through repair/retry. Use langchain_callbacks(trace_context=...) only when starting a chain that has no LangChain parent. trace_context= does not set LangChain parent_run_id."
+    },
+    {
+      "id": "typescript_langchain_reuse_callbacks",
+      "languages": [
+        "typescript"
+      ],
+      "summary": "Nest LangChain invokes inside workflow()/resumeTrace(); reuse config.callbacks inside a running node",
+      "detect": "Fresh CallbackHandler() inside a LangGraph node, or CallbackHandler constructed with { traceId, parentSpanId } from handle.traceContext()",
+      "fix": "There is no langchainCallbacks helper. Nest chain.invoke inside workflow() / resumeTrace(). Inside a running node reuse config.callbacks. Do not hand-roll { traceId, parentSpanId } — SelfShip spells the parent observationId, Langfuse expects parentSpanId."
+    },
+    {
+      "id": "python_prefer_sdk_observe_and_langchain_callbacks_for_errors",
+      "languages": [
+        "python"
+      ],
+      "summary": "Use SDK observe / langchain_callbacks so ERROR generations always get a status_message",
+      "detect": "from langfuse import observe or langfuse.langchain.CallbackHandler( without selfship.observe / selfship.langchain_callbacks",
+      "fix": "Prefer selfship.observe and selfship.langchain_callbacks() (0.3.9+). They stamp level=ERROR with a non-empty status_message on exceptions and LangChain on_*_error. Soft failures that return normally still need handle.set_error(...) with a concrete reason. Do not delete the failed span after a retry."
+    }
+  ],
+  "internal_only_notes": [
+    "0.3.9 wraps Python observe (no longer a raw Langfuse re-export) and langchain_callbacks so an ERROR span always gets a non-empty status_message (exception message → type name → empty completion → unknown error, truncated to 200). TypeScript observe / setError / Interaction.end(success=false) share formatStatusMessage with the same fallback. Structure stays strict: a failed attempt that later retries still fails the gate; the message is what makes the gap actionable.",
+    "Both dependency floors raised to >=0.3.9. Correct 0.3.8 call sites keep working. Prefer SDK observe / langchain_callbacks (0.3.9+) or handle.set_error / setError for soft failures so LangChain generations cannot land as ERROR with a blank message. Customers below the floor get an sdk-dep-upgrade bump PR."
+  ],
+  "requires_call_site_changes": true
+}

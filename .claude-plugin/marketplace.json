@@ -1,0 +1,13 @@
+{
+  "name": "selfship-skills",
+  "owner": {
+    "name": "Selfship"
+  },
+  "plugins": [
+    {
+      "name": "selfship",
+      "source": "./plugins/selfship",
+      "description": "Instrument repos, discover agentic workflows, and read Selfship product facets from your coding agent."
+    }
+  ]
+}
