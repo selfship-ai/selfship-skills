@@ -97,6 +97,8 @@ When a path streams its LLM output (SSE, `StreamingResponse`, async generator, `
 - `serverless` (Lambda/Vercel/Cloudflare): call **`flush()` / `forceFlush()` per invocation** (or `waitUntil` / Vercel `after`). Do **not** call `shutdown()` — it tears down the client so warm invocations stop tracing, and `atexit` does not fire in Lambda.
 - `batch` / CLI / one-shot: call `shutdown()` (flush + terminate) before exit.
 
+SelfShip treats a trace as finished when the **root observation has a non-null `endTime`**. `flush()` / `shutdown()` deliver buffered spans; they do not close an open root. End the root span (`workflow()` context / `end()`) before flushing.
+
 ---
 
 ## Workflow inventory fields
