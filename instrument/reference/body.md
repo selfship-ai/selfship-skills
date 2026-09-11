@@ -151,7 +151,7 @@ Inventory-tag presence is not enough. When you can run the app and MCP is config
 
 1. Restart the process so new env / provider wiring loads.
 2. Drive **one real** chat or tool call (not a mocked unit test).
-3. Confirm the turn with `traces.list` then `traces.get`. Pass `environment` matching the app (`SELFSHIP_ENV` / `LANGFUSE_TRACING_ENVIRONMENT`). MCP defaults to **production**; the SDK defaults to **development** when `SELFSHIP_ENV` is unset. An empty production list is not proof the route failed — query the env you actually emit to before changing code.
+3. Confirm the turn with `traces.list` then `traces.get`. Pass `environment` matching the app (`SELFSHIP_ENV` / `LANGFUSE_TRACING_ENVIRONMENT`). MCP defaults to **production**; the SDK defaults to **development** when `SELFSHIP_ENV` is unset. An empty production list is not proof the route failed — query the env you actually emit to before changing code. List tools default to `range=1d` (last 24 hours); if the turn is older, pass `range` (`1w`, `1mo`) or `range=custom` with `from`.
 4. `sessions.get` requires `user_key` (and `session_id` or `trace_ids`). Do not call it bare.
 
 Check:

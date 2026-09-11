@@ -24,7 +24,7 @@ That is the whole install. The [skills CLI](https://github.com/vercel-labs/skill
 npx skills add selfship-ai/selfship-skills -g
 ```
 
-Then add MCP ([docs](https://docs.selfship.ai/mcp-server)). Skills without MCP still work if you pass a local inventory or name the workflows yourself.
+Then add MCP ([docs](https://docs.selfship.ai/mcp-server)). `traces.list` / `sessions.*` default to the last 24 hours (`range=1d`); pass `range` or `from` to look further back (`sessions.*` also honor `to`). Skills without MCP still work if you pass a local inventory or name the workflows yourself.
 
 ## The three skills
 

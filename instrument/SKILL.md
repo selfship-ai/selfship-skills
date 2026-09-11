@@ -91,8 +91,8 @@ When MCP is configured:
 - `workflows.set_selected` — toggle yes/no (does **not** open a PR)
 - `product_profile.get` — path-coverage context
 - `action_items.list` — filter `source=sdk_dep_upgrade` or lever/title for upgrade work
-- `traces.list` / `traces.get` — confirm a real turn landed (full I/O on get). Pass `environment` matching the app; MCP defaults to production, SDK defaults to development
-- `sessions.list` / `sessions.get` — confirm stable `conversation_id` / `user_id`. `sessions.get` needs `user_key` plus `session_id` or `trace_ids`
+- `traces.list` / `traces.get` — confirm a real turn landed (full I/O on get). Pass `environment` matching the app; MCP defaults to production, SDK defaults to development. Lists default to the last 24 hours (`range=1d`); pass `range` or `from` to look further back (`to` is ignored on `traces.list`)
+- `sessions.list` / `sessions.get` — confirm stable `conversation_id` / `user_id`. `sessions.get` needs `user_key` plus `session_id` or `trace_ids`. Same `range` default as traces; `to` is honored here
 
 Do **not** call `workflows.upsert`. Inventory publish is a different skill/act.
 
