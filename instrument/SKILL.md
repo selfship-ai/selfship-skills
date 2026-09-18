@@ -25,7 +25,7 @@ Load **`reference/frameworks.md`** when the repo already emits AI spans, uses La
 
 Framework tables: `reference/selfship_integrations.md` and `reference/langfuse_integration_model.md`.
 
-Inspect existing telemetry **before** `init()` / `workflow()` / `langchain_callbacks()`. If a real turn already emits `gen_ai` / `ai` / `llm` / `lk` / LangSmith spans, point OTLP at `otel.selfship.ai` and stop — do not attach a second mechanism. After edits, validate one real turn with `traces.get` / `sessions.get` (inventory tags are not enough).
+Inspect existing telemetry **before** `init()` / `workflow()` / `langchain_callbacks()`. If a real turn already emits `gen_ai` / `ai` / `llm` / `lk` / LangSmith spans, point OTLP at `otel.selfship.ai` and stop — do not attach a second mechanism. After edits, validate one real turn with `traces.get` / `sessions.get` (inventory tags are not enough). Confirm **root observation output** equals the sent/persisted answer — that is what SelfShip scores. Remapped `trace.output` may still show a nested LangChain generation; fail the turn if the root is missing/wrong, or if remapped `trace.input` is a judge/eval prompt.
 
 ## Credentials (two different secrets)
 

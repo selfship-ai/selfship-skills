@@ -22,7 +22,7 @@ with selfship.workflow(
         # Soft failure that returns normally: auto set_error only fires on exceptions.
         handle.set_error(result["error"])
         return result
-    handle.set_output(result)  # full user-visible deliverable — never a preview/receipt
+    handle.set_output(result)  # scored as the user-facing answer — never a preview/receipt
     # Mid-run enrichment: handle.update(metadata=...)
 ```
 

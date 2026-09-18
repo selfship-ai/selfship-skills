@@ -645,7 +645,8 @@ constructing `CallbackHandler` directly. Invoke the chain **inside** `workflow()
 from a copied context with no LangChain parent takes `langchain_callbacks(trace_context=...)`.
 A nested invoke inside a running LangGraph node must reuse `config["callbacks"]` (the live
 `CallbackManager`) — a fresh handler list, even with `trace_context=`, stamps `is_langchain_root`
-and overwrites the trace's I/O. TypeScript has no `langchainCallbacks` helper: nest `chain.invoke`
+and elevates that run's I/O onto deprecated `trace.input` / `trace.output`. SelfShip still
+scores remapped `trace.input` as the user query. TypeScript has no `langchainCallbacks` helper: nest `chain.invoke`
 inside `workflow()` / `resumeTrace()`, and reuse `config.callbacks` inside a running node.
 Third-party OTel instrumentation can emit **extra spans** (HTTP, DB) that
 still count as billable units — filter them with a `should_export_span` / `shouldExportSpan`
@@ -704,11 +705,13 @@ For each instrumented path:
 3. **Same identity** on root and all descendants.
 4. **Output completeness** — root `set_output` / `end(output=...)` carries the full, verbatim
    user-visible deliverable (the same value, post-sanitization / post-fallback, that is
-   sent/persisted for the user). Never a slice, preview, length, or status receipt; status fields
-   go in metadata. Compute the deliverable once and pass the same variable to the send path and
-   `set_output`; scope the root span to cover output finalization. On streamed paths, set the root
-   output to the fully drained answer. The metadata/tags ≤ 200-char truncate guidance (§5.1) does
-   **not** apply to root output.
+   sent/persisted for the user). SelfShip scores this **root observation output** as the
+   user-facing answer; remapped deprecated `trace.output` is fallback only. Never a slice,
+   preview, length, or status receipt; status fields go in metadata. Compute the deliverable
+   once and pass the same variable to the send path and `set_output`; scope the root span to
+   cover output finalization. On streamed paths, set the root output to the fully drained
+   answer. The metadata/tags ≤ 200-char truncate guidance (§5.1) does **not** apply to root
+   output.
 
 ___
 
